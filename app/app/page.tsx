@@ -1,30 +1,48 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   Sparkles, 
-  Search, 
   Send, 
   TrendingDown, 
   TrendingUp, 
-  ShieldCheck, 
   Database, 
-  BarChart3, 
   Zap, 
-  AlertCircle, 
-  Users, 
-  ArrowRight,
-  Clock,
-  Layers
+  ArrowRight, 
+  Upload,
+  FileSpreadsheet,
+  CheckCircle2,
+  Activity,
+  Layers,
+  Search,
+  Table as TableIcon
 } from 'lucide-react';
 import { AskChart } from '@/components/charts/AskChart';
-import { NORTHSTAR_REVENUE_TREND, NORTHSTAR_SUMMARY_METRICS } from '@/lib/demo/northstar-data';
+import { RealtimeDataStore, RealtimeDataset, SAMPLE_DATASETS } from '@/lib/data/realtime-store';
+import { DatasetUploadModal } from '@/components/data/DatasetUploadModal';
 
 export default function OverviewPage() {
   const [askQuery, setAskQuery] = useState('');
+  const [datasets, setDatasets] = useState<RealtimeDataset[]>([]);
+  const [activeDataset, setActiveDataset] = useState<RealtimeDataset | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
   const router = useRouter();
+
+  useEffect(() => {
+    const loaded = RealtimeDataStore.getDatasets();
+    if (loaded.length === 0) {
+      // Automatically pop up upload modal on first entry if no datasets exist
+      setIsUploadModalOpen(true);
+      setDatasets([]);
+      setActiveDataset(null);
+    } else {
+      setDatasets(loaded);
+      setActiveDataset(loaded[0]);
+    }
+  }, []);
 
   const handleAskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,38 +50,67 @@ export default function OverviewPage() {
     router.push(`/app/ask?q=${encodeURIComponent(askQuery.trim())}`);
   };
 
+  const handleUploadSuccess = (newDs: RealtimeDataset) => {
+    const updated = RealtimeDataStore.getDatasets();
+    setDatasets(updated);
+    setActiveDataset(newDs);
+  };
+
+  // Compute real metrics from active dataset if available
+  let totalRows = activeDataset?.rowCount || 0;
+  let totalCols = activeDataset?.colCount || 0;
+  let numCols = activeDataset?.columns.filter(c => c.type === 'number') || [];
+  let strCols = activeDataset?.columns.filter(c => c.type === 'string') || [];
+
+  let primaryNumCol = numCols[0]?.name || 'Value';
+  let primaryStrCol = strCols[0]?.name || 'Category';
+
+  let totalNumericSum = 0;
+  let numericCount = 0;
+  const categoryMap: Record<string, number> = {};
+
+  if (activeDataset && activeDataset.rows.length > 0) {
+    activeDataset.rows.forEach(r => {
+      const val = Number(r[primaryNumCol]);
+      if (!isNaN(val)) {
+        totalNumericSum += val;
+        numericCount++;
+      }
+      const cat = String(r[primaryStrCol] || 'Other');
+      categoryMap[cat] = (categoryMap[cat] || 0) + (val || 1);
+    });
+  }
+
+  const chartData = Object.entries(categoryMap).slice(0, 6).map(([name, value]) => ({
+    name: name.substring(0, 16),
+    value: Math.round(value * 100) / 100
+  }));
+
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            What do you want to understand?
+            Real-Time Data Intelligence Workspace
           </h1>
           <p className="text-xs sm:text-sm text-[#9CA3AF] mt-1">
-            Active Workspace: <span className="text-[#D4AF37] font-semibold">Northstar Commerce</span> • 5 Datasets Connected
+            Active File: {activeDataset ? <span className="text-[#D4AF37] font-semibold">{activeDataset.name} ({activeDataset.rowCount} rows)</span> : <span className="text-gray-400">No Dataset Uploaded</span>}
           </p>
         </div>
 
         <div className="flex items-center space-x-3">
-          <Link
-            href="/app/data"
-            className="px-3.5 py-2 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-xs font-semibold text-white rounded-lg flex items-center space-x-2 transition-colors"
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="px-4 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs rounded-xl flex items-center space-x-2 transition-all gold-glow"
           >
-            <Database className="w-4 h-4 text-[#D4AF37]" />
-            <span>Data Health (98/100)</span>
-          </Link>
-          <Link
-            href="/app/investigations"
-            className="px-3.5 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs rounded-lg flex items-center space-x-1.5 transition-colors shadow-md gold-glow"
-          >
-            <Zap className="w-4 h-4" />
-            <span>New Investigation</span>
-          </Link>
+            <Upload className="w-4 h-4" />
+            <span>Upload Real Dataset</span>
+          </button>
         </div>
       </div>
 
-      {/* Primary AI Input Hero Box */}
+      {/* Primary AI Query Hero Box */}
       <div className="p-6 bg-[#121417] border border-[#D4AF37]/50 rounded-2xl shadow-2xl gold-border-glow space-y-4">
         <form onSubmit={handleAskSubmit} className="relative flex items-center">
           <Sparkles className="w-6 h-6 text-[#D4AF37] absolute left-4" />
@@ -71,27 +118,25 @@ export default function OverviewPage() {
             type="text"
             value={askQuery}
             onChange={(e) => setAskQuery(e.target.value)}
-            placeholder="Ask your data anything (e.g. 'Why did sales fall last month?')..."
+            placeholder={`Ask AI anything about ${activeDataset?.name || 'your business data'} (e.g. 'Summarize total ${primaryNumCol} by ${primaryStrCol}')...`}
             className="w-full bg-[#0B0C0E] border border-[#262B36] focus:border-[#D4AF37] rounded-xl pl-12 pr-28 py-3.5 text-sm sm:text-base text-white placeholder-[#9CA3AF] focus:outline-none transition-colors"
           />
           <button
             type="submit"
             className="absolute right-2 px-5 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs sm:text-sm rounded-lg flex items-center space-x-1.5 transition-colors shadow-md"
           >
-            <span>Ask</span>
+            <span>Ask AI</span>
             <Send className="w-3.5 h-3.5" />
           </button>
         </form>
 
-        {/* Example Chip Starters */}
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
           <span className="text-[#9CA3AF] shrink-0 font-medium">Try asking:</span>
           {[
-            "How is my business doing?",
-            "Why did sales fall last month?",
-            "Find my biggest opportunities",
-            "Create an executive dashboard",
-            "Forecast revenue"
+            `Summarize ${activeDataset?.name || 'my dataset'}`,
+            `Show total ${primaryNumCol} breakdown`,
+            `Which row has the highest ${primaryNumCol}?`,
+            `Are there any data quality issues?`
           ].map((ex, idx) => (
             <button
               key={idx}
@@ -104,155 +149,116 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Metric Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
-        <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-xs text-[#9CA3AF]">
-            <span>Monthly Revenue</span>
-            <span className="px-2 py-0.5 bg-red-950/60 border border-red-800/40 text-red-400 font-bold rounded flex items-center space-x-1">
-              <TrendingDown className="w-3 h-3" />
-              <span>-11.8%</span>
-            </span>
-          </div>
-          <div className="text-2xl font-extrabold text-white">${NORTHSTAR_SUMMARY_METRICS.monthly_revenue.toLocaleString()}</div>
-          <div className="text-[11px] text-[#9CA3AF]">vs $550,000 previous period</div>
-        </div>
-
-        {/* Metric 2 */}
-        <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-xs text-[#9CA3AF]">
-            <span>Total Orders</span>
-            <span className="px-2 py-0.5 bg-red-950/60 border border-red-800/40 text-red-400 font-bold rounded flex items-center space-x-1">
-              <TrendingDown className="w-3 h-3" />
-              <span>-9.4%</span>
-            </span>
-          </div>
-          <div className="text-2xl font-extrabold text-white">{NORTHSTAR_SUMMARY_METRICS.total_orders.toLocaleString()}</div>
-          <div className="text-[11px] text-[#9CA3AF]">AOV: ${NORTHSTAR_SUMMARY_METRICS.average_order_value} (-2.6%)</div>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-xs text-[#9CA3AF]">
-            <span>Top Growth Category</span>
-            <span className="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 font-bold rounded flex items-center space-x-1">
-              <TrendingUp className="w-3 h-3" />
-              <span>+24.1%</span>
-            </span>
-          </div>
-          <div className="text-xl font-bold text-white">Home & Office</div>
-          <div className="text-[11px] text-[#9CA3AF]">Ergonomic Desk Pro line leading</div>
-        </div>
-
-        {/* Metric 4 */}
-        <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-xs text-[#9CA3AF]">
-            <span>Primary Anomaly</span>
-            <span className="px-2 py-0.5 bg-amber-950/60 border border-amber-800/40 text-amber-400 font-bold rounded">
-              High Risk
-            </span>
-          </div>
-          <div className="text-sm font-bold text-white">Europe Electronics (-22.4%)</div>
-          <div className="text-[11px] text-[#9CA3AF]">38% increase in shipping delay tickets</div>
-        </div>
-      </div>
-
-      {/* Revenue Trend Chart Widget */}
-      <AskChart
-        spec={{
-          type: 'bar',
-          title: 'Regional Revenue Performance & Divergence',
-          description: 'Europe experienced a 22.4% contraction while North America grew +3.5%.',
-          data: NORTHSTAR_REVENUE_TREND,
-          xAxisKey: 'month',
-          yAxisKeys: ['NorthAmerica', 'Europe', 'AsiaPacific', 'LatinAmerica'],
-          unit: '$'
-        }}
-      />
-
-      {/* Two Column Layout: Recent Investigations & Decision Briefs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Investigations */}
-        <div className="p-6 bg-[#121417] border border-[#1A1D24] rounded-2xl space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#1A1D24]">
-            <div className="flex items-center space-x-2">
-              <Search className="w-5 h-5 text-[#D4AF37]" />
-              <h3 className="font-bold text-white text-base">Active Investigations</h3>
-            </div>
-            <Link href="/app/investigations" className="text-xs text-[#D4AF37] hover:underline font-semibold">
-              View All →
-            </Link>
+      {/* Dataset State Check: If No Dataset Uploaded, Render Full Empty State Dropzone */}
+      {!activeDataset ? (
+        <div className="p-8 sm:p-12 bg-[#121417] border-2 border-dashed border-[#262B36] rounded-2xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-[#0B0C0E] border border-[#D4AF37]/40 flex items-center justify-center mx-auto text-[#D4AF37]">
+            <FileSpreadsheet className="w-8 h-8" />
           </div>
 
-          <div className="space-y-3">
-            <Link
-              href="/app/investigations/inv-1"
-              className="p-4 bg-[#0B0C0E] border border-[#1A1D24] hover:border-[#D4AF37]/50 rounded-xl block space-y-2 transition-colors group"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white group-hover:text-[#D4AF37]">
-                  Why did European revenue decline in Q2?
-                </span>
-                <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full font-bold">
-                  In Progress
-                </span>
-              </div>
-              <p className="text-xs text-[#9CA3AF]">Root Cause: Component fulfillment delay on Smart IoT Hub line in Berlin.</p>
-              <div className="text-[10px] text-[#C5A059] flex items-center space-x-2">
-                <Clock className="w-3 h-3" />
-                <span>Updated 2 hours ago by Alex Morgan</span>
-              </div>
-            </Link>
-
-            <Link
-              href="/app/investigations/inv-2"
-              className="p-4 bg-[#0B0C0E] border border-[#1A1D24] hover:border-[#D4AF37]/50 rounded-xl block space-y-2 transition-colors group"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white group-hover:text-[#D4AF37]">
-                  Software category margin expansion opportunities
-                </span>
-                <span className="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-bold">
-                  Resolved
-                </span>
-              </div>
-              <p className="text-xs text-[#9CA3AF]">Outcome: Enterprise Analytics Suite expansion (+34.2% YoY).</p>
-            </Link>
-          </div>
-        </div>
-
-        {/* Executive Decision Briefs */}
-        <div className="p-6 bg-[#121417] border border-[#1A1D24] rounded-2xl space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#1A1D24]">
-            <div className="flex items-center space-x-2">
-              <Zap className="w-5 h-5 text-[#D4AF37]" />
-              <h3 className="font-bold text-white text-base">Executive Decision Briefs</h3>
-            </div>
-            <Link href="/app/decision-briefs" className="text-xs text-[#D4AF37] hover:underline font-semibold">
-              View All →
-            </Link>
-          </div>
-
-          <div className="p-4 bg-[#0B0C0E] border border-[#D4AF37]/40 rounded-xl space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">Brief #104 • Verified Evidence</span>
-              <span className="text-[10px] text-[#9CA3AF]">August 2026</span>
-            </div>
-            <h4 className="font-bold text-white text-sm">Action Plan for European Account Retention</h4>
-            <p className="text-xs text-gray-300">
-              Data confirms 38% support ticket backlog in Europe. Recommended action: Shift 200 units of Smart IoT Hubs from NA warehouse to European distribution center.
+          <div className="max-w-md mx-auto space-y-2">
+            <h2 className="text-xl font-bold text-white">No Business Dataset Uploaded Yet</h2>
+            <p className="text-xs sm:text-sm text-[#9CA3AF]">
+              Upload your CSV or Excel file to get real-time AI calculations, automated charts, and verifiable metric breakdowns. Zero fake data.
             </p>
-            <Link
-              href="/app/decision-briefs/db-1"
-              className="inline-flex items-center space-x-1.5 text-xs text-[#D4AF37] font-bold hover:underline"
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="w-full sm:w-auto px-6 py-3 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs rounded-xl flex items-center justify-center space-x-2 transition-all gold-glow"
             >
-              <span>Review Full Brief</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+              <Upload className="w-4 h-4" />
+              <span>Upload CSV / Excel File Now</span>
+            </button>
+
+            <button
+              onClick={() => {
+                RealtimeDataStore.saveDataset(SAMPLE_DATASETS[0]);
+                handleUploadSuccess(SAMPLE_DATASETS[0]);
+              }}
+              className="w-full sm:w-auto px-5 py-3 bg-[#0B0C0E] border border-[#262B36] hover:border-[#D4AF37] text-white text-xs font-semibold rounded-xl flex items-center justify-center space-x-2 transition-colors"
+            >
+              <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+              <span>Load 1-Click Sample Business CSV</span>
+            </button>
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Metric Cards Row Computed From Real Dataset */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
+              <div className="text-xs text-[#9CA3AF]">Total Rows Loaded</div>
+              <div className="text-2xl font-extrabold text-white">{totalRows.toLocaleString()}</div>
+              <div className="text-[11px] text-emerald-400 font-semibold">100% Parsed & Verified</div>
+            </div>
+
+            <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
+              <div className="text-xs text-[#9CA3AF]">Detected Columns</div>
+              <div className="text-2xl font-extrabold text-white">{totalCols}</div>
+              <div className="text-[11px] text-[#9CA3AF]">Types: {activeDataset.columns.map(c => c.type).slice(0, 3).join(', ')}</div>
+            </div>
+
+            <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
+              <div className="text-xs text-[#9CA3AF]">Sum ({primaryNumCol})</div>
+              <div className="text-2xl font-extrabold text-white">
+                {totalNumericSum > 1000 ? `$${totalNumericSum.toLocaleString()}` : totalNumericSum.toLocaleString()}
+              </div>
+              <div className="text-[11px] text-[#9CA3AF]">Across {numericCount} numeric records</div>
+            </div>
+
+            <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl space-y-2">
+              <div className="text-xs text-[#9CA3AF]">Dataset Health Score</div>
+              <div className="text-2xl font-extrabold text-emerald-400">{activeDataset.healthScore}/100</div>
+              <div className="text-[11px] text-[#9CA3AF]">Source: {activeDataset.source}</div>
+            </div>
+          </div>
+
+          {/* Real Dynamic Chart Widget */}
+          <AskChart
+            spec={{
+              type: 'bar',
+              title: `${activeDataset.name} - Breakdown by ${primaryStrCol}`,
+              description: `Real-time summary computed directly from ${activeDataset.rowCount} rows.`,
+              data: chartData,
+              xAxisKey: 'name',
+              yAxisKeys: ['value'],
+              unit: '$'
+            }}
+          />
+
+          {/* Active Dataset Schema Quick Inspection */}
+          <div className="p-6 bg-[#121417] border border-[#1A1D24] rounded-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#1A1D24] pb-3">
+              <div className="flex items-center space-x-2">
+                <Database className="w-5 h-5 text-[#D4AF37]" />
+                <h3 className="font-bold text-white text-base">Active Schema & Columns</h3>
+              </div>
+              <Link href={`/app/data/${activeDataset.id}`} className="text-xs text-[#D4AF37] hover:underline font-semibold flex items-center space-x-1">
+                <span>Full Inspection</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
+              {activeDataset.columns.map((col, idx) => (
+                <div key={idx} className="p-3 bg-[#0B0C0E] border border-[#262B36] rounded-xl text-xs space-y-1">
+                  <div className="font-bold text-white font-mono">{col.name}</div>
+                  <div className="text-[10px] text-[#D4AF37] uppercase font-semibold">{col.type}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Modal */}
+      <DatasetUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={handleUploadSuccess}
+      />
     </div>
   );
 }

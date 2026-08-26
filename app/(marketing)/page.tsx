@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -11,19 +12,46 @@ import {
   Zap, 
   Search, 
   CheckCircle2, 
-  TrendingUp,
-  Layers,
-  Users,
+  FileSpreadsheet,
+  Upload,
   Brain,
-  Lock
+  Layers,
+  AlertCircle
 } from 'lucide-react';
-import { DataFlowIllustration } from '@/components/brand/DataFlowIllustration';
-import { DecisionVectorIllustration } from '@/components/brand/DecisionVectorIllustration';
+import { RealtimeDataStore, RealtimeDataset, SAMPLE_DATASETS } from '@/lib/data/realtime-store';
 
 export default function LandingPage() {
-  const dataSources = [
-    'PostgreSQL', 'MySQL', 'BigQuery', 'Snowflake', 'CSV Upload', 'Excel XLSX', 'JSON Feeds'
-  ];
+  const router = useRouter();
+  const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (file: File) => {
+    setErrorMsg(null);
+    setIsProcessing(true);
+    try {
+      if (!file.name.endsWith('.csv') && !file.name.endsWith('.json') && !file.name.endsWith('.txt')) {
+        throw new Error('Please select a valid CSV or JSON data file.');
+      }
+      const parsed = await RealtimeDataStore.parseCSVFile(file);
+      RealtimeDataStore.saveDataset(parsed);
+      router.push(`/app/ask?ds=${parsed.id}&autoRead=1`);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to parse file.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileChange(e.dataTransfer.files[0]);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0C0E] text-white selection:bg-[#D4AF37] selection:text-black">
@@ -35,7 +63,7 @@ export default function LandingPage() {
           </div>
           <div>
             <span className="font-bold text-xl tracking-wide text-white">ASKMYDATA</span>
-            <span className="hidden sm:block text-[10px] text-[#C5A059] uppercase tracking-widest font-semibold">AI Data Intelligence</span>
+            <span className="hidden sm:block text-[10px] text-[#C5A059] uppercase tracking-widest font-semibold">Real Data Platform</span>
           </div>
         </Link>
 
@@ -48,193 +76,149 @@ export default function LandingPage() {
         </nav>
 
         <div className="flex items-center space-x-3">
-          <Link href="/demo" className="px-4 py-2 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-white rounded-lg text-sm font-semibold transition-colors">
-            Live Demo
+          <Link href="/app/data" className="px-4 py-2 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-white rounded-lg text-sm font-semibold transition-colors">
+            Data Catalog
           </Link>
-          <Link href="/login" className="px-4 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold rounded-lg text-sm transition-colors shadow-md gold-glow">
-            Start Analyzing
+          <Link href="/app" className="px-4 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold rounded-lg text-sm transition-colors shadow-md gold-glow">
+            Open Workspace
           </Link>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-16 pb-20 px-4 sm:px-8 max-w-7xl mx-auto text-center">
-        <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#121417] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-semibold mb-6">
+      <section className="relative pt-16 pb-20 px-4 sm:px-8 max-w-7xl mx-auto text-center space-y-8">
+        <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#121417] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-semibold">
           <Sparkles className="w-4 h-4" />
-          <span>V1 Production Release • Powered by Google Gemini</span>
+          <span>Real-Time Business Data Engine • Instant AI Schema Reader</span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-tight">
-          Turn your data into <span className="text-[#D4AF37]">better decisions.</span>
+          Ask questions about <span className="text-[#D4AF37]">your real data.</span> Get instant answers.
         </h1>
 
-        <p className="mt-6 text-lg sm:text-xl text-[#9CA3AF] max-w-3xl mx-auto font-normal leading-relaxed">
-          Connect your data. Ask questions naturally. Understand what is happening, explain why, investigate root causes, and turn analysis into decisions your team can act on.
+        <p className="text-lg sm:text-xl text-[#9CA3AF] max-w-3xl mx-auto font-normal leading-relaxed">
+          No fake metrics or fictional datasets. Upload your business CSV or Excel file, auto-detect column schemas, and let AI calculate answers, charts, and verified insights in real time.
         </p>
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/demo"
-            className="w-full sm:w-auto px-8 py-4 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-extrabold rounded-xl text-base transition-all shadow-xl gold-glow flex items-center justify-center space-x-2"
+        {/* Interactive Drag & Drop File Ingestion Dropzone directly in Hero */}
+        <div className="max-w-2xl mx-auto text-left">
+          <div
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`p-8 sm:p-10 border-2 border-dashed rounded-2xl text-center cursor-pointer transition-all shadow-2xl ${
+              isDragging
+                ? 'border-[#D4AF37] bg-[#D4AF37]/15 scale-[1.01]'
+                : 'border-[#D4AF37]/60 hover:border-[#D4AF37] bg-[#121417] gold-border-glow'
+            }`}
           >
-            <span>See Live Interactive Demo</span>
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-          <Link
-            href="/login"
-            className="w-full sm:w-auto px-8 py-4 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-white font-bold rounded-xl text-base transition-all flex items-center justify-center space-x-2"
-          >
-            <span>Start Free Trial</span>
-          </Link>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".csv,.json,.txt"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])}
+            />
+
+            <div className="w-16 h-16 rounded-2xl bg-[#0B0C0E] border border-[#D4AF37]/50 text-[#D4AF37] flex items-center justify-center mx-auto mb-4 gold-glow">
+              {isProcessing ? (
+                <div className="w-7 h-7 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Upload className="w-8 h-8" />
+              )}
+            </div>
+
+            <h3 className="text-base sm:text-lg font-extrabold text-white">
+              {isProcessing ? 'Parsing File & Auto-Reading Dataset...' : 'Drop your CSV or Excel file here, or click to browse'}
+            </h3>
+            <p className="text-xs sm:text-sm text-[#9CA3AF] mt-2">
+              Supports CSV, TSV, and JSON formats up to 50,000 rows. Instant local stream parsing with complete privacy.
+            </p>
+
+            <button
+              type="button"
+              className="mt-6 px-6 py-3 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-extrabold rounded-xl text-xs sm:text-sm transition-all shadow-xl gold-glow inline-flex items-center space-x-2"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Select & Upload Business Dataset</span>
+            </button>
+          </div>
+
+          {errorMsg && (
+            <div className="mt-3 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center space-x-2 text-xs text-rose-400">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
         </div>
 
-        {/* Hero Visual Mockup */}
-        <div className="mt-14 relative max-w-5xl mx-auto rounded-2xl border border-[#D4AF37]/40 bg-[#0B0C0E] p-4 sm:p-6 shadow-2xl gold-border-glow text-left">
-          <div className="flex items-center justify-between pb-4 border-b border-[#1A1D24]">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-red-500/80" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-              <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              <span className="text-xs text-[#9CA3AF] font-mono ml-2">askmydata.app/overview</span>
-            </div>
-            <span className="text-xs text-[#D4AF37] font-semibold flex items-center space-x-1">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Verified Evidence Engine</span>
-            </span>
-          </div>
-
-          <div className="py-6 space-y-6">
-            <div className="p-4 bg-[#121417] border border-[#1A1D24] rounded-xl flex items-start space-x-3">
-              <Sparkles className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
-              <div className="space-y-2">
-                <div className="text-sm font-semibold text-white">Question: "Why did revenue drop in Europe last month?"</div>
-                <div className="text-sm text-gray-300 leading-relaxed">
-                  I analyzed the Northstar Commerce dataset. European revenue contracted **-22.4%** ($128,000 vs $165,000 previous period). The primary drivers are:
-                  <ul className="list-disc list-inside mt-2 text-xs text-[#9CA3AF] space-y-1">
-                    <li>Electronics category drop (-22.4% in Smart IoT Hubs)</li>
-                    <li>38% increase in European shipping delay support tickets</li>
-                    <li>Enterprise accounts *Berlin Tech Solutions* and *London Financial* flagged as At Risk</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <DataFlowIllustration className="w-full h-44 rounded-xl" />
-          </div>
+        {/* Alternative 1-Click Sample Dataset Action */}
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={() => {
+              RealtimeDataStore.saveDataset(SAMPLE_DATASETS[0]);
+              router.push(`/app/ask?ds=${SAMPLE_DATASETS[0].id}&autoRead=1`);
+            }}
+            className="px-5 py-2.5 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-white text-xs font-semibold rounded-xl flex items-center space-x-2 transition-colors"
+          >
+            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+            <span>Test with 1-Click SaaS Subscriptions Sample CSV</span>
+          </button>
+          <button
+            onClick={() => {
+              RealtimeDataStore.saveDataset(SAMPLE_DATASETS[1]);
+              router.push(`/app/ask?ds=${SAMPLE_DATASETS[1].id}&autoRead=1`);
+            }}
+            className="px-5 py-2.5 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-white text-xs font-semibold rounded-xl flex items-center space-x-2 transition-colors"
+          >
+            <Database className="w-4 h-4 text-[#D4AF37]" />
+            <span>Test with 1-Click E-Commerce Orders Sample CSV</span>
+          </button>
         </div>
       </section>
 
-      {/* Supported Data Sources Ticker */}
-      <section className="py-12 border-y border-[#1A1D24] bg-[#121417]/50">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#C5A059] mb-6">Connects Seamlessly to Your Existing Stack</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
-            {dataSources.map((ds, idx) => (
-              <div key={idx} className="px-4 py-2 bg-[#0B0C0E] border border-[#1A1D24] rounded-lg text-sm font-semibold text-gray-300 flex items-center space-x-2">
-                <Database className="w-4 h-4 text-[#D4AF37]" />
-                <span>{ds}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Product Audiences Section */}
-      <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto">
+      {/* Feature Grid Section */}
+      <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto border-t border-[#1A1D24]">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
-            Designed for <span className="text-[#D4AF37]">Every Audience</span>
+            How AskMyData <span className="text-[#D4AF37]">Analyzes Your Dataset</span>
           </h2>
           <p className="text-base sm:text-lg text-[#9CA3AF] mt-4">
-            One underlying platform, tailored experiences for Business Owners, Data Analysts, and Data Scientists.
+            Zero setup delay. Upload a file, and AskMyData handles schema detection, type inference, calculations, and visual charts.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Business Owner */}
-          <div className="p-8 bg-[#121417] border border-[#1A1D24] hover:border-[#D4AF37]/50 rounded-2xl transition-all space-y-4">
+          <div className="p-8 bg-[#121417] border border-[#1A1D24] rounded-2xl space-y-4">
             <div className="w-12 h-12 rounded-xl bg-[#0B0C0E] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37]">
-              <Zap className="w-6 h-6" />
+              <FileSpreadsheet className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-white">Business Owners</h3>
+            <h3 className="text-xl font-bold text-white">1. Upload Any File</h3>
             <p className="text-sm text-[#9CA3AF] leading-relaxed">
-              Understand your business in plain English. Get Executive Decision Briefs, track revenue movements, identify growth opportunities, and manage risks without needing SQL skills.
+              Drag & drop your CSV or Excel dataset. Client-side stream parsing instantly reads row counts, column names, data types, and health scores.
             </p>
-            <div className="pt-2 text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-              Understand → Decide → Act
-            </div>
           </div>
 
-          {/* Data Analyst */}
-          <div className="p-8 bg-[#121417] border border-[#1A1D24] hover:border-[#D4AF37]/50 rounded-2xl transition-all space-y-4">
+          <div className="p-8 bg-[#121417] border border-[#1A1D24] rounded-2xl space-y-4">
+            <div className="w-12 h-12 rounded-xl bg-[#0B0C0E] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37]">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-white">2. Ask in Plain English</h3>
+            <p className="text-sm text-[#9CA3AF] leading-relaxed">
+              Ask questions like "What is my total revenue?", "Which category is performing best?", or "Show monthly growth trend".
+            </p>
+          </div>
+
+          <div className="p-8 bg-[#121417] border border-[#1A1D24] rounded-2xl space-y-4">
             <div className="w-12 h-12 rounded-xl bg-[#0B0C0E] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37]">
               <BarChart3 className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-white">Data Analysts</h3>
+            <h3 className="text-xl font-bold text-white">3. Get Verified Visual Answers</h3>
             <p className="text-sm text-[#9CA3AF] leading-relaxed">
-              Inspect SQL, explore schemas, validate calculations with evidence panels, build certified metric definitions, and deliver interactive dashboards 10x faster.
+              Receive calculated totals, category breakdowns, auto-generated Recharts visualizations, and step-by-step query evidence.
             </p>
-            <div className="pt-2 text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-              Explore → Analyze → Explain
-            </div>
           </div>
-
-          {/* Data Scientist */}
-          <div className="p-8 bg-[#121417] border border-[#1A1D24] hover:border-[#D4AF37]/50 rounded-2xl transition-all space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-[#0B0C0E] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37]">
-              <Brain className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold text-white">Data Scientists</h3>
-            <p className="text-sm text-[#9CA3AF] leading-relaxed">
-              Deep statistical analysis, forecasting model specs, scenario analysis simulations, and machine learning experiment tracking abstractions.
-            </p>
-            <div className="pt-2 text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-              Experiment → Model → Predict
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Signature Feature: Investigations */}
-      <section className="py-20 px-4 sm:px-8 bg-[#121417]/30 border-t border-[#1A1D24]">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#0B0C0E] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-bold">
-              <Search className="w-3.5 h-3.5" />
-              <span>Signature Feature</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
-              Persistent <span className="text-[#D4AF37]">Analytical Investigations</span>
-            </h2>
-            <p className="text-base sm:text-lg text-[#9CA3AF] leading-relaxed">
-              AskMyData doesn't stop at one chart. It constructs multi-step investigative threads that trace root causes across revenue, customers, products, and operational tickets.
-            </p>
-
-            <ul className="space-y-3 text-sm text-gray-300">
-              <li className="flex items-center space-x-3">
-                <CheckCircle2 className="w-5 h-5 text-[#D4AF37]" />
-                <span>Branching investigative step threads</span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <CheckCircle2 className="w-5 h-5 text-[#D4AF37]" />
-                <span>Auditable evidence & raw data tracing</span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <CheckCircle2 className="w-5 h-5 text-[#D4AF37]" />
-                <span>Team comments, mentions, and action items</span>
-              </li>
-            </ul>
-
-            <Link
-              href="/demo"
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-[#D4AF37] text-black font-bold rounded-xl text-sm hover:bg-[#E5B800] transition-colors"
-            >
-              <span>Explore Interactive Demo</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <DecisionVectorIllustration className="w-full h-80 rounded-2xl" />
         </div>
       </section>
 
@@ -248,6 +232,7 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center space-x-6">
+            <Link href="/app/data" className="hover:text-white">Upload Dataset</Link>
             <Link href="/security" className="hover:text-white">Security</Link>
             <Link href="/about" className="hover:text-white">About</Link>
             <Link href="/contact" className="hover:text-white">Contact</Link>

@@ -14,10 +14,6 @@ import {
   Users, 
   FlaskConical, 
   Settings, 
-  Bell, 
-  HelpCircle, 
-  ShieldCheck,
-  ChevronDown,
   Sparkles,
   Zap
 } from 'lucide-react';
@@ -50,12 +46,12 @@ export function AppSidebar({ currentMode, onModeChange, onOpenCommandBar }: AppS
       {/* Brand Header */}
       <div className="p-5 flex items-center justify-between border-b border-[#1A1D24]">
         <Link href="/app" className="flex items-center space-x-3 group">
-          <div className="w-9 h-9 rx-lg rounded-lg bg-[#121417] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] group-hover:border-[#D4AF37] transition-colors">
+          <div className="w-9 h-9 rounded-lg bg-[#121417] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] group-hover:border-[#D4AF37] transition-colors">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
             <span className="font-bold text-lg text-white tracking-wide">ASKMYDATA</span>
-            <span className="block text-[10px] text-[#C5A059] uppercase tracking-wider font-semibold">Data Intelligence</span>
+            <span className="block text-[10px] text-[#C5A059] uppercase tracking-wider font-semibold">Real Data Platform</span>
           </div>
         </Link>
       </div>
@@ -164,12 +160,12 @@ export function AppSidebar({ currentMode, onModeChange, onOpenCommandBar }: AppS
           <div className="flex items-center space-x-2">
             <img
               src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-              alt="Alex Morgan"
+              alt="Workspace User"
               className="w-8 h-8 rounded-full border border-[#D4AF37]/50 object-cover"
             />
             <div>
-              <div className="text-xs font-semibold text-white">Alex Morgan</div>
-              <div className="text-[10px] text-[#C5A059] uppercase font-bold">Northstar Commerce</div>
+              <div className="text-xs font-semibold text-white">Business Account</div>
+              <div className="text-[10px] text-[#C5A059] uppercase font-bold">Real Data Workspace</div>
             </div>
           </div>
           <Link href="/login" className="text-[#9CA3AF] hover:text-white text-xs">
