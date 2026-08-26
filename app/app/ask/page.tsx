@@ -14,7 +14,7 @@ import {
 import { AskChart } from '@/components/charts/AskChart';
 import { EvidencePanel } from '@/components/ai/EvidencePanel';
 import { GeminiProvider } from '@/lib/ai/gemini-provider';
-import { RealtimeDataStore, RealtimeDataset, SAMPLE_DATASETS } from '@/lib/data/realtime-store';
+import { RealtimeDataStore, RealtimeDataset } from '@/lib/data/realtime-store';
 import { DatasetUploadModal } from '@/components/data/DatasetUploadModal';
 
 function AskAIContent() {
@@ -43,12 +43,11 @@ function AskAIContent() {
 
   useEffect(() => {
     const loaded = RealtimeDataStore.getDatasets();
-    const all = loaded.length > 0 ? loaded : SAMPLE_DATASETS;
-    setDatasets(all);
+    setDatasets(loaded);
 
-    let targetDs = all[0];
+    let targetDs = loaded.length > 0 ? loaded[0] : null;
     if (dsParam) {
-      const found = all.find((d) => d.id === dsParam);
+      const found = loaded.find((d) => d.id === dsParam);
       if (found) targetDs = found;
     }
     setActiveDataset(targetDs);
@@ -106,10 +105,24 @@ function AskAIContent() {
     setMessages((prev) => [...prev, newUserMsg]);
     setInputQuery('');
 
+    if (!activeDataset) {
+      const aiMsgId = (Date.now() + 1).toString();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: aiMsgId,
+          sender: 'ai',
+          content: 'No dataset is currently uploaded. Please upload a CSV or Excel file to analyze metrics and ask questions.',
+          followUps: ['Upload a CSV or Excel file']
+        }
+      ]);
+      return;
+    }
+
     setProgressState('Inspecting schema & column types...');
     await new Promise((r) => setTimeout(r, 400));
 
-    setProgressState(`Running query on ${activeDataset?.name || 'Dataset'}...`);
+    setProgressState(`Running query on ${activeDataset.name}...`);
     await new Promise((r) => setTimeout(r, 500));
 
     setProgressState('Verifying calculation correctness...');
@@ -118,7 +131,7 @@ function AskAIContent() {
     const response = await gemini.analyze({
       prompt: queryText,
       workspaceId: 'realtime-workspace',
-      activeDataset: activeDataset || undefined,
+      activeDataset: activeDataset,
       explanationLevel: 'detailed'
     });
 
@@ -210,29 +223,39 @@ function AskAIContent() {
               <Sparkles className="w-7 h-7" />
             </div>
             <h2 className="text-xl font-bold text-white">
-              Ask questions about {activeDataset?.name || 'your dataset'}
+              {activeDataset ? `Ask questions about ${activeDataset.name}` : 'Upload a Business Dataset to Begin'}
             </h2>
             <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-md mx-auto">
-              AskMyData reads auto-detected column schemas, executes calculated summaries, and generates verified visualizations.
+              AskMyData reads auto-detected column schemas, calculates exact metrics, and generates verified visualizations.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto pt-4 text-left">
-              {[
-                `Summarize key metrics in ${activeDataset?.name || 'dataset'}`,
-                `Show breakdown by ${activeDataset?.columns[0]?.name || 'category'}`,
-                `Which record has the highest value?`,
-                `Are there any anomalies or missing values?`
-              ].map((q, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleAsk(q)}
-                  className="p-3 bg-[#121417] hover:bg-[#1A1D24] border border-[#1A1D24] hover:border-[#D4AF37]/50 rounded-xl text-xs font-semibold text-gray-200 transition-colors flex items-center justify-between group"
-                >
-                  <span>"{q}"</span>
-                  <ArrowRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#D4AF37]" />
-                </button>
-              ))}
-            </div>
+            {activeDataset ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto pt-4 text-left">
+                {[
+                  `Summarize my dataset`,
+                  `Show total Value breakdown`,
+                  `Which row has the highest Value?`,
+                  `Are there any data quality issues?`
+                ].map((q, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleAsk(q)}
+                    className="p-3 bg-[#121417] hover:bg-[#1A1D24] border border-[#1A1D24] hover:border-[#D4AF37]/50 rounded-xl text-xs font-semibold text-gray-200 transition-colors flex items-center justify-between group"
+                  >
+                    <span>"{q}"</span>
+                    <ArrowRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#D4AF37]" />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="px-5 py-2.5 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs rounded-xl inline-flex items-center space-x-2 transition-all gold-glow"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload CSV or Excel File Now</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -253,9 +276,11 @@ function AskAIContent() {
                   <div className="flex items-center space-x-2 border-b border-[#1A1D24] pb-3">
                     <Sparkles className="w-5 h-5 text-[#D4AF37]" />
                     <span className="font-bold text-white text-sm">AskMyData AI Analyst</span>
-                    <span className="text-[10px] px-2 py-0.5 bg-[#D4AF37]/10 text-[#D4AF37] font-mono rounded">
-                      Active File: {activeDataset?.name}
-                    </span>
+                    {activeDataset && (
+                      <span className="text-[10px] px-2 py-0.5 bg-[#D4AF37]/10 text-[#D4AF37] font-mono rounded">
+                        Active File: {activeDataset.name}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">
                     {msg.content}
@@ -272,7 +297,13 @@ function AskAIContent() {
                       {msg.followUps.map((fu, idx) => (
                         <button
                           key={idx}
-                          onClick={() => handleAsk(fu)}
+                          onClick={() => {
+                            if (fu.includes('Upload')) {
+                              setIsUploadModalOpen(true);
+                            } else {
+                              handleAsk(fu);
+                            }
+                          }}
                           className="px-3 py-1.5 bg-[#0B0C0E] border border-[#262B36] hover:border-[#D4AF37] text-xs text-[#D4AF37] rounded-lg transition-colors"
                         >
                           {fu} →
@@ -308,7 +339,7 @@ function AskAIContent() {
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder={`Ask anything about ${activeDataset?.name || 'your dataset'}...`}
+            placeholder={activeDataset ? `Ask anything about ${activeDataset.name}...` : 'Upload a CSV or Excel file to ask questions...'}
             className="w-full bg-[#121417] border border-[#262B36] focus:border-[#D4AF37] rounded-xl pl-12 pr-28 py-3 text-sm text-white placeholder-[#9CA3AF] focus:outline-none transition-colors"
           />
           <button

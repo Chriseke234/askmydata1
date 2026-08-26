@@ -43,9 +43,9 @@ Data Sample Preview:
 ${sampleRowsJson}
 
 Tone & Style Guidelines:
-- Answer directly, clearly, and concisely based on the dataset above.
-- Highlight specific numeric values, column metrics, or anomalies found in the dataset.
-- Do NOT make up fictional company names or fake figures if they are not in the dataset.
+- Answer directly, clearly, and concisely based strictly on the dataset provided above.
+- Highlight specific numeric values, column metrics, or exact row records found in the dataset.
+- Do NOT make up fictional company names, fake statistics, or figures that do not exist in the dataset.
 - Distinguish between verified facts and exploratory hypotheses.`;
 
         const result = await model.generateContent(`${systemPrompt}\n\nUser Question: ${request.prompt}`);
@@ -58,41 +58,90 @@ Tone & Style Guidelines:
       }
     }
 
-    // Real-Time Analytics Engine Computation (if Gemini API key fallback or offline)
+    // Real-Time Mathematical Engine (100% real calculations on uploaded dataset rows)
     if (!geminiAnswer && dataset) {
       const numCols = dataset.columns.filter(c => c.type === 'number');
       const strCols = dataset.columns.filter(c => c.type === 'string');
 
-      let primaryNumCol = numCols[0]?.name || 'amount';
-      let primaryCategoryCol = strCols[0]?.name || 'category';
+      let primaryNumCol = numCols[0]?.name || dataset.columns[0]?.name;
+      let primaryCategoryCol = strCols[0]?.name || dataset.columns[1]?.name || dataset.columns[0]?.name;
 
-      let totalSum = 0;
-      let count = 0;
-      const categoryGroup: Record<string, number> = {};
+      if (promptLower.includes('highest') || promptLower.includes('top record') || promptLower.includes('max')) {
+        // Find exact row with highest numeric value
+        let maxRow: Record<string, any> | null = null;
+        let maxVal = -Infinity;
 
-      dataset.rows.forEach((row) => {
-        const val = Number(row[primaryNumCol]);
-        if (!isNaN(val)) {
-          totalSum += val;
-          count++;
+        dataset.rows.forEach(r => {
+          const v = Number(r[primaryNumCol]);
+          if (!isNaN(v) && v > maxVal) {
+            maxVal = v;
+            maxRow = r;
+          }
+        });
+
+        if (maxRow) {
+          const details = Object.entries(maxRow)
+            .slice(0, 5)
+            .map(([k, v]) => `**${k}**: ${v}`)
+            .join(' | ');
+
+          geminiAnswer = `I scanned all ${dataset.rowCount} records in **${dataset.name}**:
+
+The record with the highest **${primaryNumCol}** is:
+- **Highest Value**: **${typeof maxVal === 'number' && maxVal > 100 ? '$' + maxVal.toLocaleString() : maxVal}**
+- **Record Details**: ${details}`;
         }
+      } else if (promptLower.includes('quality') || promptLower.includes('issue') || promptLower.includes('anomaly') || promptLower.includes('null')) {
+        // Audit data quality
+        const colNulls = dataset.columns.map(c => `- **${c.name}** (${c.type}): ${c.nullCount} missing values out of ${dataset?.rowCount} rows (${c.uniqueCount} distinct values)`).join('\n');
 
-        const cat = String(row[primaryCategoryCol] || 'Other');
-        categoryGroup[cat] = (categoryGroup[cat] || 0) + (val || 1);
-      });
+        geminiAnswer = `Data Quality Audit for **${dataset.name}**:
 
-      const avgVal = count > 0 ? (totalSum / count).toFixed(2) : '0';
-      const formattedTotal = totalSum > 1000 ? `$${totalSum.toLocaleString()}` : totalSum.toLocaleString();
+- **Overall Health Score**: **${dataset.healthScore}/100**
+- **Column Integrity Breakdown**:
+${colNulls}
 
-      geminiAnswer = `I analyzed **${dataset.name}** (${dataset.rowCount} rows, ${dataset.colCount} columns) in real time:
+${dataset.healthScore >= 95 ? '✓ No critical data quality issues detected in this file.' : '⚠️ Some columns contain missing values.'}`;
+      } else if (promptLower.includes('breakdown') || promptLower.includes('total') || promptLower.includes('value')) {
+        // Compute category totals
+        const grouped: Record<string, number> = {};
+        let totalVal = 0;
 
-1. **Primary Metric Total (${primaryNumCol})**: Overall total is **${formattedTotal}** across ${count} records (Average: **${avgVal}**).
-2. **Breakdown by ${primaryCategoryCol}**:
-${Object.entries(categoryGroup)
-  .slice(0, 4)
-  .map(([k, v]) => `   - **${k}**: ${typeof v === 'number' && v > 100 ? '$' + v.toLocaleString() : v}`)
-  .join('\n')}
-3. **Data Health & Completeness**: Health score is **${dataset.healthScore}/100** with 0 critical structural violations detected.`;
+        dataset.rows.forEach(r => {
+          const cat = String(r[primaryCategoryCol] || 'Other');
+          const v = Number(r[primaryNumCol]) || 0;
+          grouped[cat] = (grouped[cat] || 0) + v;
+          totalVal += v;
+        });
+
+        geminiAnswer = `Total Breakdown for **${dataset.name}** by **${primaryCategoryCol}**:
+
+- **Combined Total (${primaryNumCol})**: **${totalVal > 100 ? '$' + totalVal.toLocaleString() : totalVal.toLocaleString()}**
+- **Breakdown**:
+${Object.entries(grouped)
+  .slice(0, 6)
+  .map(([k, v]) => `   - **${k}**: ${v > 100 ? '$' + v.toLocaleString() : v.toLocaleString()}`)
+  .join('\n')}`;
+      } else {
+        // General dataset summary
+        let totalSum = 0;
+        let count = 0;
+        dataset.rows.forEach((row) => {
+          const val = Number(row[primaryNumCol]);
+          if (!isNaN(val)) {
+            totalSum += val;
+            count++;
+          }
+        });
+
+        const formattedTotal = totalSum > 100 ? `$${totalSum.toLocaleString()}` : totalSum.toLocaleString();
+
+        geminiAnswer = `Summary of **${dataset.name}**:
+
+1. **Dataset Structure**: ${dataset.rowCount} rows, ${dataset.colCount} columns (${dataset.columns.map(c => c.name).slice(0, 5).join(', ')}).
+2. **Primary Metric (${primaryNumCol})**: Overall total is **${formattedTotal}** across ${count} records.
+3. **Data Health**: Health score is **${dataset.healthScore}/100** (${dataset.source}).`;
+      }
     }
 
     if (!geminiAnswer) {
