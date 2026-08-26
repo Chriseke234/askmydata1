@@ -1,16 +1,18 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, X, FileSpreadsheet, CheckCircle2, AlertCircle, Database, Sparkles, FileText } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Upload, X, FileSpreadsheet, CheckCircle2, AlertCircle, Database, Sparkles } from 'lucide-react';
 import { RealtimeDataStore, RealtimeDataset, SAMPLE_DATASETS } from '@/lib/data/realtime-store';
 
 interface DatasetUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (dataset: RealtimeDataset) => void;
+  onSuccess?: (dataset: RealtimeDataset) => void;
 }
 
 export function DatasetUploadModal({ isOpen, onClose, onSuccess }: DatasetUploadModalProps) {
+  const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -47,15 +49,17 @@ export function DatasetUploadModal({ isOpen, onClose, onSuccess }: DatasetUpload
   const handleConfirmSave = () => {
     if (!previewDataset) return;
     RealtimeDataStore.saveDataset(previewDataset);
-    onSuccess(previewDataset);
+    if (onSuccess) onSuccess(previewDataset);
     setPreviewDataset(null);
     onClose();
+    router.push(`/app/ask?ds=${previewDataset.id}&autoRead=1`);
   };
 
   const handleLoadSample = (sample: RealtimeDataset) => {
     RealtimeDataStore.saveDataset(sample);
-    onSuccess(sample);
+    if (onSuccess) onSuccess(sample);
     onClose();
+    router.push(`/app/ask?ds=${sample.id}&autoRead=1`);
   };
 
   return (
@@ -69,7 +73,7 @@ export function DatasetUploadModal({ isOpen, onClose, onSuccess }: DatasetUpload
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Upload Real Business Dataset</h2>
-              <p className="text-xs text-[#9CA3AF]">Parse CSV / JSON instantly into real-time analytics engine.</p>
+              <p className="text-xs text-[#9CA3AF]">Parse CSV / JSON instantly and let AI read your data.</p>
             </div>
           </div>
           <button
@@ -113,10 +117,10 @@ export function DatasetUploadModal({ isOpen, onClose, onSuccess }: DatasetUpload
                 </div>
 
                 <h3 className="text-sm font-bold text-white">
-                  {isProcessing ? 'Parsing Columns & Inferring Data Types...' : 'Drop your CSV dataset here, or click to browse'}
+                  {isProcessing ? 'Parsing Columns & Reading Dataset Schema...' : 'Drop your CSV dataset here, or click to browse'}
                 </h3>
                 <p className="text-xs text-[#9CA3AF] mt-1">
-                  Supports CSV, TSV, and JSON formats up to 50,000 rows. Instant local parsing with client privacy.
+                  Supports CSV, TSV, and JSON formats up to 50,000 rows. Instant AI reading and visualization.
                 </p>
               </div>
 
@@ -131,7 +135,7 @@ export function DatasetUploadModal({ isOpen, onClose, onSuccess }: DatasetUpload
               <div className="space-y-3 pt-2">
                 <div className="flex items-center space-x-2 text-xs font-semibold text-[#9CA3AF]">
                   <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-                  <span>Or start with a 1-click real business sample dataset:</span>
+                  <span>Or try a 1-click business sample dataset:</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -230,8 +234,8 @@ export function DatasetUploadModal({ isOpen, onClose, onSuccess }: DatasetUpload
                   onClick={handleConfirmSave}
                   className="px-5 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black text-xs font-bold rounded-xl transition-colors gold-glow flex items-center space-x-1.5"
                 >
-                  <span>Import Dataset to Workspace</span>
-                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Read Dataset with AI</span>
+                  <Sparkles className="w-4 h-4" />
                 </button>
               </div>
             </div>

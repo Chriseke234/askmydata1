@@ -9,7 +9,6 @@ import {
   RefreshCw,
   ArrowRight,
   Upload,
-  Layers,
   ChevronDown
 } from 'lucide-react';
 import { AskChart } from '@/components/charts/AskChart';
@@ -21,6 +20,8 @@ import { DatasetUploadModal } from '@/components/data/DatasetUploadModal';
 function AskAIContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
+  const dsParam = searchParams.get('ds') || '';
+  const autoReadParam = searchParams.get('autoRead') === '1';
 
   const [inputQuery, setInputQuery] = useState(initialQuery);
   const [datasets, setDatasets] = useState<RealtimeDataset[]>([]);
@@ -44,16 +45,57 @@ function AskAIContent() {
     const loaded = RealtimeDataStore.getDatasets();
     const all = loaded.length > 0 ? loaded : SAMPLE_DATASETS;
     setDatasets(all);
-    if (all.length > 0) {
-      setActiveDataset(all[0]);
+
+    let targetDs = all[0];
+    if (dsParam) {
+      const found = all.find((d) => d.id === dsParam);
+      if (found) targetDs = found;
     }
-  }, []);
+    setActiveDataset(targetDs);
+
+    if (autoReadParam && targetDs) {
+      handleAutoReadDataset(targetDs);
+    }
+  }, [dsParam, autoReadParam]);
 
   useEffect(() => {
-    if (initialQuery && activeDataset) {
+    if (initialQuery && activeDataset && !autoReadParam) {
       handleAsk(initialQuery);
     }
   }, [initialQuery, activeDataset]);
+
+  const handleAutoReadDataset = async (targetDs: RealtimeDataset) => {
+    setMessages([]);
+    setProgressState(`Reading dataset schema for "${targetDs.name}"...`);
+    await new Promise((r) => setTimeout(r, 400));
+
+    setProgressState(`Analyzing ${targetDs.rowCount} rows & ${targetDs.colCount} columns...`);
+    await new Promise((r) => setTimeout(r, 500));
+
+    setProgressState('Generating AI dataset intelligence brief...');
+    await new Promise((r) => setTimeout(r, 400));
+
+    const response = await gemini.analyze({
+      prompt: `Analyze and summarize key insights for dataset ${targetDs.name}`,
+      workspaceId: 'realtime-workspace',
+      activeDataset: targetDs,
+      explanationLevel: 'detailed'
+    });
+
+    setProgressState(null);
+
+    const aiMsgId = Date.now().toString();
+    setMessages([
+      {
+        id: aiMsgId,
+        sender: 'ai',
+        content: `I have read your uploaded dataset **"${targetDs.name}"** (${targetDs.rowCount} rows, ${targetDs.colCount} columns):\n\n${response.answer}`,
+        chartSpec: response.chartSpec,
+        evidence: response.evidence,
+        followUps: response.suggestedFollowUps,
+      }
+    ]);
+  };
 
   const handleAsk = async (queryText: string) => {
     if (!queryText.trim()) return;
@@ -64,10 +106,10 @@ function AskAIContent() {
     setMessages((prev) => [...prev, newUserMsg]);
     setInputQuery('');
 
-    setProgressState('Inspecting schema & data types...');
+    setProgressState('Inspecting schema & column types...');
     await new Promise((r) => setTimeout(r, 400));
 
-    setProgressState(`Executing analytical query on ${activeDataset?.name || 'Dataset'}...`);
+    setProgressState(`Running query on ${activeDataset?.name || 'Dataset'}...`);
     await new Promise((r) => setTimeout(r, 500));
 
     setProgressState('Verifying calculation correctness...');
@@ -100,6 +142,7 @@ function AskAIContent() {
     const updated = RealtimeDataStore.getDatasets();
     setDatasets(updated);
     setActiveDataset(newDs);
+    handleAutoReadDataset(newDs);
   };
 
   return (
@@ -112,7 +155,7 @@ function AskAIContent() {
           </div>
           <div>
             <h1 className="font-bold text-white text-base">AskMyData AI Analyst</h1>
-            <p className="text-xs text-[#9CA3AF]">Query real uploaded datasets in natural language.</p>
+            <p className="text-xs text-[#9CA3AF]">Query real uploaded business datasets in natural language.</p>
           </div>
         </div>
 
@@ -124,7 +167,10 @@ function AskAIContent() {
                 value={activeDataset?.id || ''}
                 onChange={(e) => {
                   const ds = datasets.find(d => d.id === e.target.value);
-                  if (ds) setActiveDataset(ds);
+                  if (ds) {
+                    setActiveDataset(ds);
+                    handleAutoReadDataset(ds);
+                  }
                 }}
                 className="appearance-none bg-[#121417] border border-[#262B36] hover:border-[#D4AF37] rounded-xl px-3 py-1.5 pr-8 text-xs font-bold text-[#D4AF37] focus:outline-none cursor-pointer"
               >
@@ -147,8 +193,8 @@ function AskAIContent() {
           </button>
 
           <button
-            onClick={() => setMessages([])}
-            title="Reset conversation"
+            onClick={() => activeDataset && handleAutoReadDataset(activeDataset)}
+            title="Re-read dataset"
             className="p-1.5 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] rounded-xl text-xs text-[#9CA3AF] hover:text-white transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
