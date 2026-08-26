@@ -17,9 +17,6 @@ export class GeminiProvider implements AIProvider {
       const allDs = RealtimeDataStore.getDatasets();
       if (allDs.length > 0) {
         dataset = allDs[0];
-      } else {
-        const sampleDs = RealtimeDataStore.getDatasetById('sample-saas-revenue');
-        if (sampleDs) dataset = sampleDs;
       }
     }
 
@@ -48,7 +45,7 @@ ${sampleRowsJson}
 Tone & Style Guidelines:
 - Answer directly, clearly, and concisely based on the dataset above.
 - Highlight specific numeric values, column metrics, or anomalies found in the dataset.
-- Do NOT make up fictional company names if they are not in the dataset.
+- Do NOT make up fictional company names or fake figures if they are not in the dataset.
 - Distinguish between verified facts and exploratory hypotheses.`;
 
         const result = await model.generateContent(`${systemPrompt}\n\nUser Question: ${request.prompt}`);
@@ -69,7 +66,6 @@ Tone & Style Guidelines:
       let primaryNumCol = numCols[0]?.name || 'amount';
       let primaryCategoryCol = strCols[0]?.name || 'category';
 
-      // Compute total sum, average, min, max for primary numeric column
       let totalSum = 0;
       let count = 0;
       const categoryGroup: Record<string, number> = {};
@@ -99,11 +95,15 @@ ${Object.entries(categoryGroup)
 3. **Data Health & Completeness**: Health score is **${dataset.healthScore}/100** with 0 critical structural violations detected.`;
     }
 
+    if (!geminiAnswer) {
+      geminiAnswer = `No dataset is currently uploaded. Please upload a CSV or Excel file in the Data Catalog to start real-time AI analysis.`;
+    }
+
     // Dynamic Chart Data Generation based on Real Uploaded Columns
     const chartData = dataset ? this.buildChartData(dataset) : [];
 
     return {
-      answer: geminiAnswer || `I analyzed your dataset successfully. Total rows: ${dataset?.rowCount || 0}.`,
+      answer: geminiAnswer,
       intentType: promptLower.includes('why') ? 'diagnostic' : promptLower.includes('forecast') ? 'predictive' : 'descriptive',
       evidence: {
         level: 'Verified',
@@ -114,25 +114,21 @@ ${Object.entries(categoryGroup)
           : `SELECT * FROM uploaded_data LIMIT 50;`,
         limitations: ['Analysis is calculated directly on active client-side dataset rows.']
       },
-      chartSpec: {
+      chartSpec: chartData.length > 0 ? {
         type: 'bar',
         title: dataset ? `${dataset.name} - Breakdown by ${dataset.columns.find(c => c.type === 'string')?.name || 'Category'}` : 'Dataset Analysis',
-        data: chartData.length > 0 ? chartData : [
-          { name: 'Group A', value: 400 },
-          { name: 'Group B', value: 300 },
-          { name: 'Group C', value: 600 }
-        ],
+        data: chartData,
         xAxisKey: 'name',
         yAxisKeys: ['value'],
         unit: '$'
-      },
+      } : undefined,
       suggestedFollowUps: dataset ? [
         `What is the highest value record in ${dataset.name}?`,
         `Show distribution of ${dataset.columns[0]?.name || 'columns'}`,
         `Are there any missing or outlier values in this file?`
       ] : [
-        'How is the business performing?',
-        'Show dataset summary'
+        'Upload a CSV or Excel file to get started',
+        'Open Data Catalog'
       ]
     };
   }

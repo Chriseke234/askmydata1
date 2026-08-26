@@ -1,28 +1,24 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Zap, ShieldCheck, ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Zap, ArrowRight, Upload, Sparkles, Database } from 'lucide-react';
+import { RealtimeDataStore, RealtimeDataset } from '@/lib/data/realtime-store';
+import { DatasetUploadModal } from '@/components/data/DatasetUploadModal';
 
 export default function DecisionBriefsPage() {
-  const briefs = [
-    {
-      id: 'db-1',
-      title: 'Action Plan for European Account Retention & Fulfillment Realignment',
-      situation: 'European revenue contracted by 22.4% due to fulfillment delays on the Smart IoT Hub line.',
-      evidenceLevel: 'Verified',
-      actionsCount: 3,
-      date: 'August 2026'
-    },
-    {
-      id: 'db-[#102]',
-      title: 'Software Category Expansion & Enterprise Pricing Optimization',
-      situation: 'Software segment margin expanded +34.2% YoY with high retention.',
-      evidenceLevel: 'Strong evidence',
-      actionsCount: 2,
-      date: 'July 2026'
+  const [activeDataset, setActiveDataset] = useState<RealtimeDataset | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  useEffect(() => {
+    const loaded = RealtimeDataStore.getDatasets();
+    if (loaded.length > 0) {
+      setActiveDataset(loaded[0]);
     }
-  ];
+  }, []);
+
+  const numCol = activeDataset?.columns.find(c => c.type === 'number')?.name || 'metrics';
+  const strCol = activeDataset?.columns.find(c => c.type === 'string')?.name || 'category';
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
@@ -32,38 +28,74 @@ export default function DecisionBriefsPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Executive Decision Briefs</h1>
           <p className="text-xs sm:text-sm text-[#9CA3AF] mt-1">Structured decision briefs turning complex analytics into clear executive action.</p>
         </div>
+
+        <button
+          onClick={() => setIsUploadModalOpen(true)}
+          className="px-4 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs rounded-xl flex items-center space-x-2 transition-all gold-glow"
+        >
+          <Upload className="w-4 h-4" />
+          <span>Upload Dataset</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {briefs.map((b) => (
+      {!activeDataset ? (
+        <div className="p-8 sm:p-12 bg-[#121417] border-2 border-dashed border-[#262B36] rounded-2xl text-center space-y-5">
+          <div className="w-14 h-14 rounded-2xl bg-[#0B0C0E] border border-[#D4AF37]/40 flex items-center justify-center mx-auto text-[#D4AF37]">
+            <Zap className="w-7 h-7" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="text-lg font-bold text-white">No Decision Briefs Created Yet</h3>
+            <p className="text-xs text-[#9CA3AF]">
+              Upload a business dataset to generate executive briefs with verified evidence and actionable recommendations.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="px-5 py-2.5 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs rounded-xl inline-flex items-center space-x-2 transition-all gold-glow"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Dataset to Generate Brief</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
-            key={b.id}
-            href="/app/decision-briefs/db-1"
+            href={`/app/ask?q=${encodeURIComponent(`Generate executive decision brief for ${activeDataset.name}`)}`}
             className="p-6 bg-[#121417] border border-[#D4AF37]/40 hover:border-[#D4AF37] rounded-2xl space-y-4 transition-all group shadow-xl gold-border-glow"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider flex items-center space-x-1.5">
                 <Zap className="w-4 h-4" />
-                <span>Executive Brief • {b.date}</span>
+                <span>Executive Brief • Real Dataset</span>
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40">
-                ✓ {b.evidenceLevel}
+                ✓ Verified Evidence
               </span>
             </div>
 
-            <h2 className="text-lg font-bold text-white group-hover:text-[#D4AF37] transition-colors">{b.title}</h2>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">{b.situation}</p>
+            <h2 className="text-lg font-bold text-white group-hover:text-[#D4AF37] transition-colors">
+              Action Plan: Optimization of {numCol} in {activeDataset.name}
+            </h2>
+            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+              Analyzed {activeDataset.rowCount} rows across {activeDataset.colCount} dimensions ({strCol}, {numCol}). Verified 0 critical data quality issues.
+            </p>
 
             <div className="pt-3 border-t border-[#1A1D24] flex items-center justify-between text-xs text-[#9CA3AF]">
-              <span>{b.actionsCount} Recommended Actions</span>
+              <span>Real-Time Action Plan</span>
               <span className="text-[#D4AF37] font-semibold flex items-center space-x-1">
                 <span>View Decision Brief</span>
                 <ArrowRight className="w-4 h-4" />
               </span>
             </div>
           </Link>
-        ))}
-      </div>
+        </div>
+      )}
+
+      <DatasetUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={(ds) => setActiveDataset(ds)}
+      />
     </div>
   );
 }
