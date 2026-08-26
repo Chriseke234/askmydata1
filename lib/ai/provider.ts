@@ -1,10 +1,12 @@
 // AI Provider Abstraction Interface
+import { RealtimeDataset } from '../data/realtime-store';
 
 export interface AIAnalysisRequest {
   prompt: string;
   workspaceId: string;
   userRole?: string;
   currentDatasetId?: string;
+  activeDataset?: RealtimeDataset;
   investigationId?: string;
   conversationHistory?: Array<{ role: 'user' | 'model'; content: string }>;
   explanationLevel?: 'simple' | 'detailed' | 'technical';

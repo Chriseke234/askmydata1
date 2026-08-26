@@ -5,26 +5,28 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Sparkles, 
   Send, 
-  ShieldCheck, 
-  Code, 
-  BarChart3, 
-  Search, 
-  Layers, 
-  ArrowRight, 
+  Database, 
   RefreshCw,
-  Zap,
-  CheckCircle2,
-  FileText
+  ArrowRight,
+  Upload,
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 import { AskChart } from '@/components/charts/AskChart';
 import { EvidencePanel } from '@/components/ai/EvidencePanel';
 import { GeminiProvider } from '@/lib/ai/gemini-provider';
+import { RealtimeDataStore, RealtimeDataset, SAMPLE_DATASETS } from '@/lib/data/realtime-store';
+import { DatasetUploadModal } from '@/components/data/DatasetUploadModal';
 
 function AskAIContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
   const [inputQuery, setInputQuery] = useState(initialQuery);
+  const [datasets, setDatasets] = useState<RealtimeDataset[]>([]);
+  const [activeDataset, setActiveDataset] = useState<RealtimeDataset | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
   const [messages, setMessages] = useState<Array<{
     id: string;
     sender: 'user' | 'ai';
@@ -39,10 +41,19 @@ function AskAIContent() {
   const gemini = new GeminiProvider();
 
   useEffect(() => {
-    if (initialQuery) {
+    const loaded = RealtimeDataStore.getDatasets();
+    const all = loaded.length > 0 ? loaded : SAMPLE_DATASETS;
+    setDatasets(all);
+    if (all.length > 0) {
+      setActiveDataset(all[0]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialQuery && activeDataset) {
       handleAsk(initialQuery);
     }
-  }, [initialQuery]);
+  }, [initialQuery, activeDataset]);
 
   const handleAsk = async (queryText: string) => {
     if (!queryText.trim()) return;
@@ -53,21 +64,19 @@ function AskAIContent() {
     setMessages((prev) => [...prev, newUserMsg]);
     setInputQuery('');
 
-    setProgressState('Understanding your question...');
-    await new Promise((r) => setTimeout(r, 600));
+    setProgressState('Inspecting schema & data types...');
+    await new Promise((r) => setTimeout(r, 400));
 
-    setProgressState('Finding relevant dataset schemas...');
-    await new Promise((r) => setTimeout(r, 600));
-
-    setProgressState('Executing read-only statistical query...');
-    await new Promise((r) => setTimeout(r, 700));
+    setProgressState(`Executing analytical query on ${activeDataset?.name || 'Dataset'}...`);
+    await new Promise((r) => setTimeout(r, 500));
 
     setProgressState('Verifying calculation correctness...');
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 400));
 
     const response = await gemini.analyze({
       prompt: queryText,
-      workspaceId: 'northstar-workspace',
+      workspaceId: 'realtime-workspace',
+      activeDataset: activeDataset || undefined,
       explanationLevel: 'detailed'
     });
 
@@ -87,47 +96,86 @@ function AskAIContent() {
     ]);
   };
 
+  const handleUploadSuccess = (newDs: RealtimeDataset) => {
+    const updated = RealtimeDataStore.getDatasets();
+    setDatasets(updated);
+    setActiveDataset(newDs);
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] lg:h-screen bg-[#0B0C0E]">
-      {/* Header */}
-      <div className="p-4 sm:px-8 border-b border-[#1A1D24] bg-[#0B0C0E] flex items-center justify-between">
+      {/* Header Bar */}
+      <div className="p-4 sm:px-8 border-b border-[#1A1D24] bg-[#0B0C0E] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-[#121417] border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37]">
+          <div className="w-8 h-8 rounded-lg bg-[#121417] border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37] shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
             <h1 className="font-bold text-white text-base">AskMyData AI Analyst</h1>
-            <p className="text-xs text-[#9CA3AF]">Connected: Northstar Commerce Datasets</p>
+            <p className="text-xs text-[#9CA3AF]">Query real uploaded datasets in natural language.</p>
           </div>
         </div>
 
-        <button
-          onClick={() => setMessages([])}
-          className="px-3 py-1.5 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] rounded-lg text-xs text-[#9CA3AF] hover:text-white flex items-center space-x-1.5 transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>New Thread</span>
-        </button>
+        {/* Dataset Selector Dropdown & Upload Action */}
+        <div className="flex items-center space-x-2">
+          {datasets.length > 0 && (
+            <div className="relative">
+              <select
+                value={activeDataset?.id || ''}
+                onChange={(e) => {
+                  const ds = datasets.find(d => d.id === e.target.value);
+                  if (ds) setActiveDataset(ds);
+                }}
+                className="appearance-none bg-[#121417] border border-[#262B36] hover:border-[#D4AF37] rounded-xl px-3 py-1.5 pr-8 text-xs font-bold text-[#D4AF37] focus:outline-none cursor-pointer"
+              >
+                {datasets.map((d) => (
+                  <option key={d.id} value={d.id} className="bg-[#121417] text-white">
+                    Connected: {d.name} ({d.rowCount} rows)
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-[#D4AF37] absolute right-2.5 top-2.5 pointer-events-none" />
+            </div>
+          )}
+
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="px-3 py-1.5 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all gold-glow"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>Upload Dataset</span>
+          </button>
+
+          <button
+            onClick={() => setMessages([])}
+            title="Reset conversation"
+            className="p-1.5 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] rounded-xl text-xs text-[#9CA3AF] hover:text-white transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Conversation Workspace Canvas */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 max-w-5xl mx-auto w-full">
         {messages.length === 0 && !progressState && (
-          <div className="py-12 text-center space-y-4">
+          <div className="py-10 text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-[#121417] border border-[#D4AF37]/40 flex items-center justify-center mx-auto text-[#D4AF37]">
               <Sparkles className="w-7 h-7" />
             </div>
-            <h2 className="text-xl font-bold text-white">Ask your data anything</h2>
+            <h2 className="text-xl font-bold text-white">
+              Ask questions about {activeDataset?.name || 'your dataset'}
+            </h2>
             <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-md mx-auto">
-              AskMyData will discover schema relationships, execute controlled queries, verify calculations, and visualize findings.
+              AskMyData reads auto-detected column schemas, executes calculated summaries, and generates verified visualizations.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto pt-4 text-left">
               {[
-                "How is the business performing?",
-                "Why did sales fall in Europe last month?",
-                "Which products are growing fastest?",
-                "Show customer churn rate by region"
+                `Summarize key metrics in ${activeDataset?.name || 'dataset'}`,
+                `Show breakdown by ${activeDataset?.columns[0]?.name || 'category'}`,
+                `Which record has the highest value?`,
+                `Are there any anomalies or missing values?`
               ].map((q, idx) => (
                 <button
                   key={idx}
@@ -159,6 +207,9 @@ function AskAIContent() {
                   <div className="flex items-center space-x-2 border-b border-[#1A1D24] pb-3">
                     <Sparkles className="w-5 h-5 text-[#D4AF37]" />
                     <span className="font-bold text-white text-sm">AskMyData AI Analyst</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-[#D4AF37]/10 text-[#D4AF37] font-mono rounded">
+                      Active File: {activeDataset?.name}
+                    </span>
                   </div>
                   <div className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">
                     {msg.content}
@@ -211,7 +262,7 @@ function AskAIContent() {
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask a question or request a deeper investigation..."
+            placeholder={`Ask anything about ${activeDataset?.name || 'your dataset'}...`}
             className="w-full bg-[#121417] border border-[#262B36] focus:border-[#D4AF37] rounded-xl pl-12 pr-28 py-3 text-sm text-white placeholder-[#9CA3AF] focus:outline-none transition-colors"
           />
           <button
@@ -223,6 +274,13 @@ function AskAIContent() {
           </button>
         </form>
       </div>
+
+      {/* Upload Modal */}
+      <DatasetUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={handleUploadSuccess}
+      />
     </div>
   );
 }
@@ -231,7 +289,7 @@ export default function AskAIWorkspace() {
   return (
     <Suspense fallback={
       <div className="p-8 text-center text-xs text-[#9CA3AF]">
-        Loading AskMyData AI Analyst Workspace...
+        Loading Real-Time AI Analyst Workspace...
       </div>
     }>
       <AskAIContent />
