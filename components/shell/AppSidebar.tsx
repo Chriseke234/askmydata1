@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   MessageSquareCode, 
@@ -25,14 +25,16 @@ interface AppSidebarProps {
 
 export function AppSidebar({ currentMode, onModeChange, onOpenCommandBar }: AppSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navigationItems = [
     { name: 'Overview', href: '/app', icon: LayoutDashboard },
+    { name: 'Business Studio', href: '/app/business', icon: Zap, badge: 'No-Code' },
     { name: 'Ask AI Analyst', href: '/app/ask', icon: MessageSquareCode, badge: 'AI' },
     { name: 'Data Catalog', href: '/app/data', icon: Database },
     { name: 'Saved Analyses', href: '/app/analyses', icon: BarChart3 },
     { name: 'Investigations', href: '/app/investigations', icon: Search, badge: 'Signature' },
-    { name: 'Decision Briefs', href: '/app/decision-briefs', icon: Zap },
+    { name: 'Decision Briefs', href: '/app/decision-briefs', icon: FileText },
     { name: 'Dashboards', href: '/app/dashboards', icon: LayoutDashboard },
     { name: 'Executive Reports', href: '/app/reports', icon: FileText },
     { name: 'Presentations', href: '/app/presentations', icon: Presentation },
@@ -58,35 +60,44 @@ export function AppSidebar({ currentMode, onModeChange, onOpenCommandBar }: AppS
         <div className="text-[11px] text-[#9CA3AF] mb-1 px-2 font-medium uppercase tracking-wider">Workspace Mode</div>
         <div className="grid grid-cols-3 gap-1 bg-[#0B0C0E] p-1 rounded-lg border border-[#1A1D24]">
           <button
-            onClick={() => onModeChange('decision')}
+            onClick={() => {
+              onModeChange('decision');
+              router.push('/app/business');
+            }}
             className={`py-1.5 px-2 text-xs font-semibold rounded-md transition-all ${
-              currentMode === 'decision'
+              currentMode === 'decision' || pathname === '/app/business'
                 ? 'bg-[#D4AF37] text-black shadow-sm'
                 : 'text-[#9CA3AF] hover:text-white'
             }`}
-            title="Decision Mode (Business Executive)"
+            title="Business Workspace (Non-Technical)"
           >
-            Decision
+            Business
           </button>
           <button
-            onClick={() => onModeChange('analyst')}
+            onClick={() => {
+              onModeChange('analyst');
+              router.push('/app/ask');
+            }}
             className={`py-1.5 px-2 text-xs font-semibold rounded-md transition-all ${
-              currentMode === 'analyst'
+              currentMode === 'analyst' || pathname === '/app/ask'
                 ? 'bg-[#D4AF37] text-black shadow-sm'
                 : 'text-[#9CA3AF] hover:text-white'
             }`}
-            title="Analyst Mode (SQL & Visuals)"
+            title="Analyst Workspace (SQL & Inquiry)"
           >
             Analyst
           </button>
           <button
-            onClick={() => onModeChange('data_science')}
+            onClick={() => {
+              onModeChange('data_science');
+              router.push('/app/data-science');
+            }}
             className={`py-1.5 px-2 text-xs font-semibold rounded-md transition-all ${
-              currentMode === 'data_science'
+              currentMode === 'data_science' || pathname === '/app/data-science'
                 ? 'bg-[#D4AF37] text-black shadow-sm'
                 : 'text-[#9CA3AF] hover:text-white'
             }`}
-            title="Data Science Mode (ML & Stats)"
+            title="Data Science Lab (Stats & ML)"
           >
             Science
           </button>

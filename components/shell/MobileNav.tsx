@@ -29,20 +29,21 @@ export function MobileNav({ onOpenCommandBar }: MobileNavProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const mainTabs = [
-    { name: 'Overview', href: '/app', icon: LayoutDashboard },
+    { name: 'Business', href: '/app/business', icon: Zap },
     { name: 'Ask AI', href: '/app/ask', icon: MessageSquareCode, isAccent: true },
     { name: 'Data', href: '/app/data', icon: Database },
     { name: 'Investigations', href: '/app/investigations', icon: Search },
-    { name: 'Profile', href: '/app/settings/profile', icon: User },
+    { name: 'Overview', href: '/app', icon: LayoutDashboard },
   ];
 
   const drawerItems = [
-    { name: 'Decision Briefs', href: '/app/decision-briefs', icon: Zap },
+    { name: 'Business Intelligence Studio', href: '/app/business', icon: Zap },
+    { name: 'Decision Briefs', href: '/app/decision-briefs', icon: FileText },
     { name: 'Saved Analyses', href: '/app/analyses', icon: BarChart3 },
     { name: 'Dashboards', href: '/app/dashboards', icon: LayoutDashboard },
     { name: 'Reports', href: '/app/reports', icon: FileText },
     { name: 'Presentations', href: '/app/presentations', icon: Presentation },
-    { name: 'Data Science Workspace', href: '/app/data-science', icon: FlaskConical },
+    { name: 'Data Science Lab', href: '/app/data-science', icon: FlaskConical },
     { name: 'Team Workspace', href: '/app/team', icon: Users },
     { name: 'Settings & Glossary', href: '/app/settings/profile', icon: Settings },
   ];

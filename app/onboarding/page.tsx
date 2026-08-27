@@ -215,10 +215,21 @@ export default function OnboardingPage() {
             </div>
 
             <button
-              onClick={() => router.push('/app')}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('askmydata_user_role', selectedRole);
+                }
+                if (selectedRole === 'business') {
+                  router.push('/app/business');
+                } else if (selectedRole === 'analyst') {
+                  router.push('/app/ask');
+                } else {
+                  router.push('/app/data-science');
+                }
+              }}
               className="w-full py-3 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-extrabold rounded-xl text-sm transition-all gold-glow"
             >
-              Go to Workspace Overview
+              Go to {selectedRole === 'business' ? 'Business Workspace' : selectedRole === 'analyst' ? 'Analyst Workspace' : 'Data Science Lab'}
             </button>
           </div>
         )}
