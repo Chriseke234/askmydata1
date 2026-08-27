@@ -8,18 +8,7 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#0B0C0E] text-white">
-      <header className="sticky top-0 z-50 bg-[#0B0C0E]/90 backdrop-blur border-b border-[#1A1D24] px-4 sm:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-[#121417] border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37]">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <span className="font-bold text-xl tracking-wide text-white">ASKMYDATA</span>
-        </Link>
-        <Link href="/demo" className="px-4 py-2 bg-[#D4AF37] text-black font-bold rounded-lg text-sm gold-glow">
-          Live Demo
-        </Link>
-      </header>
+    <div className="py-12">
 
       <main className="max-w-xl mx-auto px-4 py-16 space-y-6">
         <div className="text-center space-y-2">

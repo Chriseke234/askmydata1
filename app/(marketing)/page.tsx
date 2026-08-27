@@ -26,35 +26,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0B0C0E] text-white selection:bg-[#D4AF37] selection:text-black">
-      {/* Marketing Header */}
-      <header className="sticky top-0 z-50 bg-[#0B0C0E]/90 backdrop-blur-md border-b border-[#1A1D24] px-4 sm:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-3 group">
-          <img src="/logo.png" alt="AskMyData Logo" className="w-10 h-10 object-contain group-hover:scale-105 transition-transform" />
-          <div>
-            <span className="font-bold text-xl tracking-wide text-white">ASKMYDATA</span>
-            <span className="hidden sm:block text-[10px] text-[#C5A059] uppercase tracking-widest font-semibold">AI Data Intelligence Platform</span>
-          </div>
-        </Link>
-
-        <nav className="hidden md:flex items-center space-x-6 text-sm text-[#9CA3AF]">
-          <Link href="/features" className="hover:text-white transition-colors">Features</Link>
-          <Link href="/for-business" className="hover:text-white transition-colors">For Business</Link>
-          <Link href="/for-analysts" className="hover:text-white transition-colors">For Analysts</Link>
-          <Link href="/for-data-scientists" className="hover:text-white transition-colors">For Data Scientists</Link>
-          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-        </nav>
-
-        <div className="flex items-center space-x-3">
-          <Link href="/login" className="px-4 py-2 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-white rounded-xl text-sm font-semibold transition-colors">
-            Sign In
-          </Link>
-          <Link href="/app/ask" className="px-4.5 py-2 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-bold rounded-xl text-sm transition-all shadow-md gold-glow hover:scale-[1.02]">
-            Start Analyzing
-          </Link>
-        </div>
-      </header>
-
+    <div className="selection:bg-[#D4AF37] selection:text-black">
       {/* Hero Section */}
       <section className="relative pt-16 pb-20 px-4 sm:px-8 max-w-7xl mx-auto text-center space-y-8">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#121417] border border-[#D4AF37]/50 text-[#D4AF37] text-xs font-semibold shadow-inner">
