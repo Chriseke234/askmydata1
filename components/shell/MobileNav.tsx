@@ -11,7 +11,6 @@ import {
   User, 
   Menu, 
   X, 
-  Sparkles, 
   BarChart3, 
   FileText, 
   Presentation, 
@@ -53,9 +52,7 @@ export function MobileNav({ onOpenCommandBar }: MobileNavProps) {
       {/* Top Mobile Bar */}
       <header className="lg:hidden sticky top-0 z-40 bg-[#0B0C0E]/95 backdrop-blur border-b border-[#1A1D24] px-4 py-3 flex items-center justify-between">
         <Link href="/app" className="flex items-center space-x-2">
-          <div className="w-7 h-7 rounded-md bg-[#121417] border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37]">
-            <Sparkles className="w-4 h-4" />
-          </div>
+          <img src="/logo.png" alt="AskMyData Logo" className="w-7 h-7 object-contain" />
           <span className="font-bold text-white text-base tracking-wide">ASKMYDATA</span>
         </Link>
 
@@ -122,7 +119,7 @@ export function MobileNav({ onOpenCommandBar }: MobileNavProps) {
           <div className="relative w-4/5 max-w-xs bg-[#0B0C0E] border-r border-[#1A1D24] h-full flex flex-col p-4 shadow-2xl z-10 overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-[#1A1D24]">
               <div className="flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+                <img src="/logo.png" alt="AskMyData Logo" className="w-6 h-6 object-contain" />
                 <span className="font-bold text-white text-base">ASKMYDATA</span>
               </div>
               <button

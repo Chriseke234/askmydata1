@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowRight, Lock, Mail } from 'lucide-react';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
@@ -23,7 +23,6 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        // Fallback for immediate demo testing
         if (email === 'demo@askmydata.app' || email.includes('demo')) {
           router.push('/app');
           return;
@@ -33,7 +32,6 @@ export default function LoginPage() {
         router.push('/app');
       }
     } catch (err: any) {
-      // Allow seamless access to demo workspace if credentials match
       router.push('/app');
     } finally {
       setLoading(false);
@@ -45,9 +43,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-[#121417] border border-[#1A1D24] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 gold-border-glow">
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center space-x-2">
-            <div className="w-9 h-9 rounded-lg bg-[#0B0C0E] border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37]">
-              <Sparkles className="w-5 h-5" />
-            </div>
+            <img src="/logo.png" alt="AskMyData Logo" className="w-10 h-10 object-contain" />
             <span className="font-bold text-xl tracking-wide text-white">ASKMYDATA</span>
           </Link>
           <h1 className="text-2xl font-bold text-white pt-2">Welcome back</h1>
