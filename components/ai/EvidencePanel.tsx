@@ -33,8 +33,9 @@ export function EvidencePanel({ evidence }: EvidencePanelProps) {
           <ShieldCheck className="w-5 h-5 text-[#D4AF37]" />
           <span className="font-bold text-white text-sm">Evidence & Verification</span>
         </div>
-        <span className={`text-xs px-2.5 py-1 rounded-full border font-bold ${getBadgeStyle(evidence.level)}`}>
-          ✓ {evidence.level}
+        <span className={`text-xs px-2.5 py-1 rounded-full border font-bold flex items-center space-x-1.5 ${getBadgeStyle(evidence.level)}`}>
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+          <span>{evidence.level}</span>
         </span>
       </div>
 
