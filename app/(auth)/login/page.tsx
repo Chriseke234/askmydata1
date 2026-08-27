@@ -105,7 +105,16 @@ export default function LoginPage() {
         <div className="pt-4 border-t border-[#1A1D24] text-center space-y-3">
           <button
             type="button"
-            onClick={() => router.push('/onboarding')}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('askmydata_user_config', JSON.stringify({
+                  full_name: 'Guest User',
+                  company_name: 'Guest Mode',
+                  is_guest: true
+                }));
+              }
+              router.push('/onboarding');
+            }}
             className="w-full py-2 bg-[#0B0C0E] border border-[#262B36] hover:border-[#D4AF37] rounded-lg text-xs font-semibold text-[#D4AF37] transition-colors"
           >
             Enter Demo Workspace as Guest

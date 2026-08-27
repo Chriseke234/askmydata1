@@ -34,14 +34,8 @@ export default function BusinessWorkspace() {
     { id: 3, type: 'Whitespace', count: 12, description: 'Untrimmed cell text whitespace' }
   ]);
 
-  // Data Entry Grid State
-  const [gridData, setGridData] = useState([
-    { id: '101', date: '2026-07-26', customer: 'Berlin Tech Solutions', category: 'Electronics', region: 'Europe', revenue: 45000, status: 'Completed' },
-    { id: '102', date: '2026-07-25', customer: 'London Financial', category: 'Services', region: 'Europe', revenue: 80000, status: 'Completed' },
-    { id: '103', date: '2026-07-24', customer: 'New York Commerce', category: 'Electronics', region: 'North America', revenue: 62000, status: 'Completed' },
-    { id: '104', date: '2026-07-23', customer: 'Tokyo Enterprises', category: 'Hardware', region: 'Asia-Pacific', revenue: 38000, status: 'Pending' },
-    { id: '105', date: '2026-07-22', customer: 'Paris Logistics', category: 'Services', region: 'Europe', revenue: 29000, status: 'Completed' },
-  ]);
+  // Data Entry Grid State (Populated dynamically from user uploads / entry)
+  const [gridData, setGridData] = useState<Array<any>>([]);
 
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; field: string } | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -52,9 +46,9 @@ export default function BusinessWorkspace() {
     id: String(Date.now()).slice(-3),
     date: new Date().toISOString().split('T')[0],
     customer: '',
-    category: 'Electronics',
-    region: 'North America',
-    revenue: 10000,
+    category: 'General',
+    region: 'Primary',
+    revenue: 0,
     status: 'Completed'
   });
 

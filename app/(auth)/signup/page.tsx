@@ -38,9 +38,17 @@ export default function SignupPage() {
       if (error) {
         setErrorMsg(error.message);
       } else {
-        setSuccessMsg('Account created successfully! Redirecting to your workspace...');
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('askmydata_user_config', JSON.stringify({
+            full_name: fullName,
+            company_name: companyName,
+            email: email,
+            is_guest: false
+          }));
+        }
+        setSuccessMsg('Account created successfully! Redirecting to setup survey...');
         setTimeout(() => {
-          router.push('/app/data');
+          router.push('/onboarding');
         }, 1000);
       }
     } catch (err: any) {

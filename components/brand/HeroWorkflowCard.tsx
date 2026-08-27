@@ -118,7 +118,7 @@ export function HeroWorkflowCard() {
             <div className="p-3 bg-[#0B0C0E]/60 border border-[#1A1D24] rounded-xl flex items-center justify-between text-xs text-[#9CA3AF]">
               <div className="flex items-center space-x-2">
                 <Database className="w-4 h-4 text-[#D4AF37]" />
-                <span>Connected Source: <strong className="text-white">Northstar Global Postgres</strong></span>
+                <span>Connected Source: <strong className="text-white">Production Business Postgres</strong></span>
               </div>
               <span className="text-[11px] text-emerald-400 flex items-center space-x-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ export function HeroWorkflowCard() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               <div className="p-2.5 bg-[#0B0C0E] border border-[#1A1D24] rounded-lg">
                 <div className="text-[10px] text-[#9CA3AF]">Source Dataset</div>
-                <div className="font-bold text-white font-mono text-[11px]">northstar_orders</div>
+                <div className="font-bold text-white font-mono text-[11px]">business_orders</div>
               </div>
               <div className="p-2.5 bg-[#0B0C0E] border border-[#1A1D24] rounded-lg">
                 <div className="text-[10px] text-[#9CA3AF]">Records Analyzed</div>
@@ -213,7 +213,7 @@ export function HeroWorkflowCard() {
               </div>
               <pre className="p-2 bg-[#121417] text-[#D4AF37] font-mono text-[11px] rounded border border-[#1A1D24] overflow-x-auto">
                 {`SELECT region, category, SUM(price * qty - discount) AS net_revenue 
-FROM northstar_orders 
+FROM business_orders 
 WHERE period IN ('2026-06', '2026-07') AND region = 'Europe' 
 GROUP BY 1, 2 ORDER BY net_revenue ASC;`}
               </pre>
@@ -243,7 +243,7 @@ GROUP BY 1, 2 ORDER BY net_revenue ASC;`}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="space-y-1">
                   <div className="text-[#D4AF37] font-bold text-[11px] uppercase">Key Risks</div>
-                  <p className="text-gray-300">Berlin Tech Solutions ($45k ARR) & London Financial ($80k ARR) flagged as churn risks due to shipping delays.</p>
+                  <p className="text-gray-300">Enterprise accounts flagged as churn risks due to shipping delays.</p>
                 </div>
                 <div className="space-y-1">
                   <div className="text-emerald-400 font-bold text-[11px] uppercase">Recommended Action Plan</div>
