@@ -19,7 +19,6 @@ import {
   ChevronDown,
   Sparkles
 } from 'lucide-react';
-import { Navbar } from '@/components/shell/Navbar';
 import { DataFlowIllustration } from '@/components/brand/DataFlowIllustration';
 import { DecisionVectorIllustration } from '@/components/brand/DecisionVectorIllustration';
 import { MagneticButton } from '@/components/brand/MagneticButton';
@@ -45,12 +44,9 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0B0C0E] text-white selection:bg-[#D4AF37] selection:text-black">
-      {/* Unified Floating Navbar */}
-      <Navbar />
-
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-24 px-4 sm:px-8 max-w-7xl mx-auto text-center min-h-[90vh] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#0B0C0E] text-white">
+      {/* Hero Section (Navbar is rendered once in (marketing)/layout.tsx) */}
+      <section className="relative pt-32 pb-24 px-4 sm:px-8 max-w-7xl mx-auto text-center min-h-[85vh] flex flex-col justify-between">
         <div className="space-y-8">
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#121417] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-bold tracking-wider uppercase">
             <img src="/logo.png" alt="Icon" className="w-4 h-4 object-contain" />

@@ -6,8 +6,7 @@ import { Sparkles, ShieldCheck, Lock, Eye, Database } from 'lucide-react';
 
 export default function SecurityPage() {
   return (
-    <div className="py-12">
-
+    <div className="min-h-screen bg-[#0B0C0E] text-white pt-24">
       <main className="max-w-4xl mx-auto px-4 py-16 space-y-8">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 rounded-xl bg-[#121417] border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37] mx-auto">

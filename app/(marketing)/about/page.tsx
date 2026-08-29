@@ -6,8 +6,7 @@ import { Sparkles } from 'lucide-react';
 
 export default function AboutPage() {
   return (
-    <div className="py-12">
-
+    <div className="min-h-screen bg-[#0B0C0E] text-white pt-24">
       <main className="max-w-3xl mx-auto px-4 py-16 space-y-6 text-center">
         <h1 className="text-4xl font-extrabold text-white">About AskMyData</h1>
         <p className="text-gray-300 leading-relaxed">

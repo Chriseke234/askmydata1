@@ -6,8 +6,7 @@ import { Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function PricingPage() {
   return (
-    <div className="py-12">
-
+    <div className="min-h-screen bg-[#0B0C0E] text-white pt-24">
       <main className="max-w-4xl mx-auto px-4 py-16 text-center space-y-8">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#121417] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-bold">
           <Sparkles className="w-4 h-4" />

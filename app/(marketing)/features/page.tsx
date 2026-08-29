@@ -6,8 +6,7 @@ import { Sparkles, BarChart3, Database, ShieldCheck, Search, Zap, ArrowRight } f
 
 export default function FeaturesPage() {
   return (
-    <div className="py-12">
-
+    <div className="min-h-screen bg-[#0B0C0E] text-white pt-24">
       <main className="max-w-6xl mx-auto px-4 py-16 space-y-12">
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-extrabold text-white">Platform Features</h1>

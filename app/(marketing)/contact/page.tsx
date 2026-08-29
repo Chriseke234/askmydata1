@@ -8,8 +8,7 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
 
   return (
-    <div className="py-12">
-
+    <div className="min-h-screen bg-[#0B0C0E] text-white pt-24">
       <main className="max-w-xl mx-auto px-4 py-16 space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-extrabold text-white">Get in touch</h1>

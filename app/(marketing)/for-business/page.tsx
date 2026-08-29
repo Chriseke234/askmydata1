@@ -6,8 +6,7 @@ import { Sparkles, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export default function ForBusinessPage() {
   return (
-    <div className="py-12">
-
+    <div className="min-h-screen bg-[#0B0C0E] text-white pt-24">
       <main className="max-w-4xl mx-auto px-4 py-16 space-y-8">
         <div className="text-center space-y-4">
           <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-widest">FOR BUSINESS OWNERS & EXECUTIVES</span>
