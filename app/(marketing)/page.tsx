@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Sparkles
 } from 'lucide-react';
+import { Navbar } from '@/components/shell/Navbar';
 import { DataFlowIllustration } from '@/components/brand/DataFlowIllustration';
 import { DecisionVectorIllustration } from '@/components/brand/DecisionVectorIllustration';
 import { MagneticButton } from '@/components/brand/MagneticButton';
@@ -45,53 +46,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0C0E] text-white selection:bg-[#D4AF37] selection:text-black">
-      {/* Floating Header */}
-      <header className="sticky top-0 z-40 bg-[#0B0C0E]/80 backdrop-blur-md border-b border-[#1A1D24] px-4 sm:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-3 group">
-          <img src="/logo.png" alt="AskMyData Logo" className="w-10 h-10 object-contain group-hover:scale-105 transition-transform" />
-          <div>
-            <span className="font-bold text-xl tracking-[0.15em] text-white">ASKMYDATA</span>
-            <span className="hidden sm:block text-[10px] text-[#C5A059] uppercase tracking-widest font-semibold">AI Data Intelligence</span>
-          </div>
-        </Link>
-
-        <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-[#9CA3AF]">
-          <Link href="/features" className="hover:text-white transition-colors relative group py-1">
-            <span>Features</span>
-            <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#D4AF37] scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-          </Link>
-          <Link href="/for-business" className="hover:text-white transition-colors relative group py-1">
-            <span>For Business</span>
-            <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#D4AF37] scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-          </Link>
-          <Link href="/for-analysts" className="hover:text-white transition-colors relative group py-1">
-            <span>For Analysts</span>
-            <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#D4AF37] scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-          </Link>
-          <Link href="/for-data-scientists" className="hover:text-white transition-colors relative group py-1">
-            <span>For Scientists</span>
-            <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#D4AF37] scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-          </Link>
-          <Link href="/pricing" className="hover:text-white transition-colors relative group py-1">
-            <span>Pricing</span>
-            <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#D4AF37] scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-          </Link>
-        </nav>
-
-        <div className="flex items-center space-x-4">
-          <Link href="/demo" className="hidden sm:inline-block px-4 py-2 bg-[#121417] hover:bg-[#1A1D24] border border-[#262B36] text-white rounded-xl text-xs font-bold transition-colors">
-            Live Demo
-          </Link>
-          <MagneticButton>
-            <Link href="/login" className="px-5 py-2.5 bg-[#D4AF37] hover:bg-[#E5B800] text-black font-extrabold rounded-xl text-xs uppercase tracking-wider block transition-colors shadow-md gold-glow">
-              Start Analyzing
-            </Link>
-          </MagneticButton>
-        </div>
-      </header>
+      {/* Unified Floating Navbar */}
+      <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-24 px-4 sm:px-8 max-w-7xl mx-auto text-center min-h-[90vh] flex flex-col justify-between">
+      <section className="relative pt-32 pb-24 px-4 sm:px-8 max-w-7xl mx-auto text-center min-h-[90vh] flex flex-col justify-between">
         <div className="space-y-8">
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#121417] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-bold tracking-wider uppercase">
             <img src="/logo.png" alt="Icon" className="w-4 h-4 object-contain" />

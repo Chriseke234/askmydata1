@@ -29,45 +29,44 @@ export function MobileNav({ onOpenCommandBar }: MobileNavProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const mainTabs = [
-    { name: 'Business', href: '/app/business', icon: Zap },
+    { name: 'Overview', href: '/app', icon: LayoutDashboard },
     { name: 'Ask AI', href: '/app/ask', icon: MessageSquareCode, isAccent: true },
     { name: 'Data', href: '/app/data', icon: Database },
     { name: 'Investigations', href: '/app/investigations', icon: Search },
-    { name: 'Overview', href: '/app', icon: LayoutDashboard },
+    { name: 'Profile', href: '/app/settings/profile', icon: User },
   ];
 
   const drawerItems = [
-    { name: 'Business Intelligence Studio', href: '/app/business', icon: Zap },
-    { name: 'Decision Briefs', href: '/app/decision-briefs', icon: FileText },
+    { name: 'Decision Briefs', href: '/app/decision-briefs', icon: Zap },
     { name: 'Saved Analyses', href: '/app/analyses', icon: BarChart3 },
     { name: 'Dashboards', href: '/app/dashboards', icon: LayoutDashboard },
     { name: 'Reports', href: '/app/reports', icon: FileText },
     { name: 'Presentations', href: '/app/presentations', icon: Presentation },
-    { name: 'Data Science Lab', href: '/app/data-science', icon: FlaskConical },
+    { name: 'Data Science Workspace', href: '/app/data-science', icon: FlaskConical },
     { name: 'Team Workspace', href: '/app/team', icon: Users },
     { name: 'Settings & Glossary', href: '/app/settings/profile', icon: Settings },
   ];
 
   return (
     <>
-      {/* Top Mobile Bar */}
-      <header className="lg:hidden sticky top-0 z-40 bg-[#0B0C0E]/95 backdrop-blur border-b border-[#1A1D24] px-4 py-3 flex items-center justify-between">
+      {/* Top Mobile Header (Compact & Clean) */}
+      <header className="lg:hidden sticky top-0 z-30 bg-[#0B0C0E]/95 backdrop-blur border-b border-[#1A1D24] px-4 py-2.5 flex items-center justify-between">
         <Link href="/app" className="flex items-center space-x-2">
           <img src="/logo.png" alt="AskMyData Logo" className="w-7 h-7 object-contain" />
-          <span className="font-bold text-white text-base tracking-wide">ASKMYDATA</span>
+          <span className="font-extrabold text-white text-base tracking-wider">ASKMYDATA</span>
         </Link>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={onOpenCommandBar}
-            className="p-2 bg-[#121417] border border-[#262B36] rounded-lg text-[#D4AF37] hover:bg-[#1A1D24]"
+            className="p-1.5 bg-[#121417] border border-[#262B36] rounded-lg text-[#D4AF37] hover:bg-[#1A1D24]"
             aria-label="Open Command Bar"
           >
             <Search className="w-4 h-4" />
           </button>
           <button
             onClick={() => setDrawerOpen(true)}
-            className="p-2 bg-[#121417] border border-[#262B36] rounded-lg text-white hover:bg-[#1A1D24]"
+            className="p-1.5 bg-[#121417] border border-[#262B36] rounded-lg text-white hover:bg-[#1A1D24]"
             aria-label="Open Navigation Drawer"
           >
             <Menu className="w-5 h-5" />
@@ -76,7 +75,7 @@ export function MobileNav({ onOpenCommandBar }: MobileNavProps) {
       </header>
 
       {/* Bottom Sticky Mobile Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B0C0E] border-t border-[#1A1D24] px-2 py-2 flex items-center justify-around">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0B0C0E] border-t border-[#1A1D24] px-2 py-1.5 flex items-center justify-around">
         {mainTabs.map((tab) => {
           const isActive = pathname === tab.href || (tab.href !== '/app' && pathname.startsWith(tab.href));
           const Icon = tab.icon;
